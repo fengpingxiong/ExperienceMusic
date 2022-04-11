@@ -15,6 +15,7 @@ SoundFile sampleHalfOne;
 BeatDetector DancebeatDetector;
 BeatDetector DabobeatDetector;
 BeatDetector SingbeatDetector;
+BeatDetector RainbeatDetector;
 
 Amplitude rms;
 //Amplitude birdRms;
@@ -42,11 +43,11 @@ boolean swift = true;
 color[] cols = {#279A8B, #E13F88, #FFBB3E, #DE0150, #D6E679, #BB86EE};
 //background color
 color bg = #28282D;
-//color bg = #E9D3B8;
 
 //Poetry Array
-String[] poem = {"Stronger.txt", "HerKind.txt", "StillIRise.txt", "LadyLazarus.txt", "AWomanSpeaks.txt", "WeSinfulWomen.txt", "ISingTheBodyElectric.txt", "Brave.txt"};
-
+String[] poem = {"Stronger.txt", "HerKind.txt", "StillIRise.txt", 
+"LadyLazarus.txt", "AWomanSpeaks.txt", "WeSinfulWomen.txt", 
+"ISingTheBodyElectric.txt", "Brave.txt"};
 
 int fileCount = 0;
 //Lines array
@@ -60,6 +61,21 @@ ArrayList<Stream> streams;
 int fontInc;
 boolean rainStart = false;
 
+Stem myStem;
+Circle circles[];
+Flower1 flowers1 = new Flower1();
+float scaleFactor=0.5;
+int myCountForGrow=0;
+
+PImage history;
+PImage brave;
+PImage sinful;
+PImage rise;
+PImage woman;
+PImage her;
+PImage body;
+
+int lighten = 255;
 
 void setup() {
   //fullScreen();
@@ -101,6 +117,10 @@ void setup() {
   SingbeatDetector = new BeatDetector(this);
   SingbeatDetector.input(sampleSingIlomilo);
   SingbeatDetector.sensitivity(50);
+  
+  RainbeatDetector = new BeatDetector(this);
+  RainbeatDetector.input(sampleRain);
+  RainbeatDetector.sensitivity(30);
 
   DaboTwoRms = new Amplitude(this);
   DaboTwoRms.input(sampleDaboTwo);
@@ -109,37 +129,79 @@ void setup() {
   SingRms.input(sampleSingIlomilo);
 
   flowerSetup();
-  
+
   fontInc = 20;
   theFont = createFont("Arial Unicode MS", fontInc);
   textFont(theFont);
   textAlign(CENTER, TOP);
-  
+
   streams = new ArrayList<Stream>();
 
   for (int x=fontInc/2; x < width; x+=fontInc) {
     streams.add(new Stream(x));
   }
-  
+  PFont f = createFont("Montserrat-MediumItalic", 64);
+
+  brave = loadImage("BraveT.png");
+  sinful = loadImage("WeSinfulWomenT.png");
+  rise = loadImage("StillIRiseT.png");
+  woman = loadImage("AWomanSpeaksT.png");
+  her = loadImage("HerKindT.png");
+  body = loadImage("ISingTheBodyElectricT.png");
+
+  myStem = new Stem(400, height);
+  flowers1 = new Flower1 (0, 0);
+  //moved this to setup, no need to recreate each frame
+  circles = new Circle[6];
+  circles[0]  = new Circle(0, -40, 50, 50);
+  circles[1]  = new Circle(0, -40, 50, 50);
+  circles[2]  = new Circle(0, -40, 50, 50);
+  circles[3]  = new Circle(0, -40, 50, 50);
+  circles[4]  = new Circle(0, -40, 50, 50);
+  circles[5]  = new Circle(0, 0, 50, 50);
+  // also smooth only needs to be called once
+  // unless ther is a noSmooth() somewhere
+  smooth();
 }//END SETUP
 
 void draw() {
   //background(bg);
 
   Position = sampleDance.position();
-  //println(Position);
   drawRms();
   drawDaboTwoRms();
   drawSingRms();
   playSoundFiles();
+
+  if (rainStart == true) {
+    background(bg);
+    textSize(20);
+    for (Stream s : streams) {
+      s.update();
+    }
+    if(Position>90){
+      //if (frameCount%9>7) {
+        if(RainbeatDetector.isBeat()){
+    displayPoetry();
+  }
+  lighten--;
+
+
+  float grow = 0;
+  //translate(myStem.initalloX, myStem.initalloY);
+  myStem.drawStem();
+
+  translate(myStem.initalloX, myStem.initalloY-(myCountForGrow));
+  if (frameCount>10) {
+    flowers1.grow();
+    flowers1.display();
+  }
+
+  if (myCountForGrow<200)
+    myCountForGrow+=1.28;
+}
+  }
   
-  if(rainStart == true){
-    background(0);
-  for (Stream s : streams) {
-    s.update();
-    
-  }
-  }
 }// END DRAW
 
 void drawRms() {
@@ -187,9 +249,11 @@ void drawSingRms() {
 void playSoundFiles() {
   if ((Position >= 0.0) && (Position < 3.271)) {
     sampleDance.pan(-1.0);
+   
     if (DancebeatDetector.isBeat()) {
       //myPort.write(0); //upper left
       println("0");
+      
     } else {
     }
   }
@@ -203,6 +267,7 @@ void playSoundFiles() {
   }
   if ((Position >= 5.29) && (Position < 7.253)) {
     sampleDance.pan(-1.0);
+    
     if (DancebeatDetector.isBeat()) {
       //myPort.write(0);//upper left
       println("0");
@@ -223,37 +288,48 @@ void playSoundFiles() {
   if ((Position >= 16.111) && (Position < 16.211)) {
     if (flag == true) {
       sampleCow.play();
+     
       //sampleFullfill.play();
       //myPort.write(3);
       flag = false;
       println("Cow");
+       
     } else {
     }
   }
   if ((Position >= 19.360) && (Position < 19.6)) {
+     
     if (flag == false) {
       sampleBirds.play();
       flag = true;
       println("cuckoo");
+      println("flag " + flag);
+       
     } else {
     }
   }
   if ((Position >= 20.610) && (Position < 20.70)) {
+   
     if (flag == true) {
       //myPort.write(4);//comment out if vest not attached
       flag = false;
       println("cuckooHaptic");
+      println("flag " + flag);
+     
     } else {
     }
   }
   if ((Position >= 29.185) && (Position < 50.6)) {
+    
     if (flag == false) {
       sampleDaboOne.play();
+     
       println("Dabo");
       flag = true;
     }
-    textSize(14);
-    text("Put your finger on the red light, and please don't move", width/6, height/2);
+    textSize(32);
+    textAlign(CENTER);
+    text("Put your finger on the red light, and please don't move it", width/2, height/2);
     fill(0, 408, 612);
     //myPort.write(5);//comment out if vest not attached
     //if ( myPort.available() > 0) {  // If data is available,
@@ -274,8 +350,9 @@ void playSoundFiles() {
   }
   if ((Position >= 52.50) && (flag == true) && (threeHeartbeat.size() > 0)) {
     if (flag == true) {
-      textSize(14);
-      text("You could move your finger from the red light", width/6, height/2);
+      textSize(32);
+      textAlign(CENTER);
+      text("You could move your finger from the red light", width/2, height/2);
       fill(0, 408, 612);
       float number = threeHeartbeat.get(1);
       sampleHeartbeat.play();
@@ -289,52 +366,64 @@ void playSoundFiles() {
       sampleDaboTwo.play();
       swift = false;
       println("DaboTwo");
+     
     } else {
     }
   }
   if ((Position >= 60.1) && (Position < 78.375)) {
     //myPort.write(new_DaboTwoRms_scaled);//comment out if vest not attached
+    
   }
   if ((Position >= 78.375) && (Position < 79.736)) {
-    //if (swift == false) {
+    
+    if (swift == false) {
     //myPort.clear();
     //myPort.stop();
     //String portName = Serial.list()[4];
     //myPort = new Serial(this, portName, 115200);
     swift = true;
     println("Swift to stroke");
+    println("swift "+swift);
+     
     //} else {
-    //}
+    }
   }
   if ((Position >= 79.736) && (Position < 79.8)) {
+   
     if (swift == true) {
       //myPort.write(7);//comment out if vest not attached
       swift = false;
       println("Stroke");
+      println("swift " +swift);
+   
+   
     } else {
     }
   }
   if ((Position >= 82.218) && (Position < 82.250)) {
+
     if (swift == false) {
       sampleRain.play();
       rainStart = true;
+      
       //myPort.clear();
       //myPort.stop();
       //String portName = Serial.list()[5];
       //myPort = new Serial(this, portName, 115200);
-      println("rain");
+      println("rainStart " +rainStart);
       println("swift" + swift);
       swift = true;
       //} else {
     }
   }
   if ((Position >= 103.671) && (Position < 103.8)) {
+  
     if (swift == true) {
       rainStart = false;
+    
       sampleSingIlomilo.play();
       sampleSingIlomilo.rate(1.1);
       swift = false;
-      //flowerSetup();
       //println("file # " +frameCount%7);
       println("Sing");
     } else {
@@ -344,6 +433,7 @@ void playSoundFiles() {
     if (SingbeatDetector.isBeat()) {
       //myPort.write(8);//comment out if vest not attached
       //println("8");
+      if(Position > 110){
       push();
       noStroke();
       flowerSetup();
@@ -352,11 +442,12 @@ void playSoundFiles() {
       fill(bg, t);
       //shadow faux background layer
       rect(0, 0, width, height);
-      
+
       for (Flower flower : flowers ) {
         flower.update();
       }
       pop();
+      }
     } else {
     }
   }
@@ -368,4 +459,4 @@ void playSoundFiles() {
     }
   } else {
   }
-}
+}//end Play Sound Files
