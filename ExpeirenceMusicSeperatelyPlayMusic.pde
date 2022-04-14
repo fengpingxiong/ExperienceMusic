@@ -602,7 +602,7 @@ void playSoundFiles() {
       float t = map(sin(radians(frameCount)), -1, 1, 10, 45);
       fill(bg, t);
       //shadow faux background layer
-      rect(0, 0, width, height);
+     
 
       for (Flower flower : flowers ) {
         flower.update();
