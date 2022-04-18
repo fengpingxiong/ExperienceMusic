@@ -21,10 +21,10 @@ void displayPoetry() {
 }
 
 void wordDraw() {
-  fill(random(150, 250));
-  text(wordsStronger[int(random(wordsStronger.length))], wordX, strongerY);
-  text(wordsStronger[int(random(wordsStronger.length))], wordX+250, strongerY);
-  text(wordsStronger[int(random(wordsStronger.length))], wordX+500, strongerY);
+  fill(random(50, 250));
+  text(wordsStronger[int(random(wordsStronger.length))], wordX, strongerY+350);
+  text(wordsStronger[int(random(wordsStronger.length))], wordX+250, strongerY+200);
+  text(wordsStronger[int(random(wordsStronger.length))], wordX+500, strongerY+500);
   //println(wordsStronger.length);
   //println(index);
   //index++;
@@ -37,4 +37,13 @@ if(frameCount%9==1){
   wordX = random(width*.5, width);
   strongerY = random(height*.2, height*.8);
 }
+if(frameCount%7==2){
+  wordX = random(width*.5, width);
+  strongerY = random(height*.2, height*.8);
+}
+if(frameCount%8==7){
+  wordX = random(width*.5, width);
+  strongerY = random(height*.2, height*.8);
+}
+
 }
