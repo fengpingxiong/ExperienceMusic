@@ -31,7 +31,7 @@ float sum;
 float DaboSum;
 float SingSum;
 float readNumber;
-float x1,y1, x2, y2,x, y, z;
+float x1, y1, x2, y2, x, y, z;
 float xs=9, ys=8.1, zs=7;
 float rotz=0, rotx=0, roty=0;
 float dia = 300;
@@ -53,23 +53,33 @@ boolean flag = true;
 boolean swift = true;
 boolean temper = true;
 boolean oxy = true;
+boolean shape = false;
 
-//flower colors
+//flower colors Green, Red, orange, dark red
 color[] cols = {#279A8B, #E13F88, #FFBB3E, #DE0150, #D6E679, #BB86EE};
+//textrain colors
+color[] cols2 = {#1F7A6E, #912958, #805E1F, #DE0150, #9C0036, #745394};
 //background color
 color bg = #28282D;
 
 //Poetry Array
-String[] poem = {"Stronger.txt", "HerKind.txt", "StillIRise.txt", 
-"LadyLazarus.txt", "AWomanSpeaks.txt", "WeSinfulWomen.txt", 
-"ISingTheBodyElectric.txt", "Brave.txt"};
+String[] poem = {"Stronger.txt", "HerKind.txt", "StillIRise.txt",
+  "LadyLazarus.txt", "AWomanSpeaks.txt", "WeSinfulWomen.txt",
+  "ISingTheBodyElectric.txt", "Brave.txt"};
+
+String[] wordList = {"Words.txt"};
+String[] wordsStronger;
+String strongerAll;
 
 int fileCount = 0;
 //Lines array
 String[] lines;
+String[] words;
+
 
 //Flowers array
 Flower[] flowers;
+firstFlower[] firstFlowers;
 
 PFont theFont;
 ArrayList<Stream> streams;
@@ -81,6 +91,8 @@ Circle circles[];
 Flower1 flowers1 = new Flower1();
 float scaleFactor=0.5;
 int myCountForGrow=0;
+float wordX= 500;
+float strongerY = random(150, 650);
 
 PImage history;
 PImage brave;
@@ -91,6 +103,7 @@ PImage her;
 PImage body;
 
 int lighten = 255;
+int index =0;
 
 void setup() {
   //fullScreen();
@@ -125,7 +138,7 @@ void setup() {
   DabobeatDetector = new BeatDetector(this);
   DabobeatDetector.input(sampleDaboOne);
   DabobeatDetector.sensitivity(50);
-  
+
   HeartbeatDetector = new BeatDetector(this);
   HeartbeatDetector.input(sampleHeartbeat);
   HeartbeatDetector.sensitivity(20);
@@ -133,10 +146,10 @@ void setup() {
   SingbeatDetector = new BeatDetector(this);
   SingbeatDetector.input(sampleSingIlomilo);
   SingbeatDetector.sensitivity(50);
-  
+
   RainbeatDetector = new BeatDetector(this);
   RainbeatDetector.input(sampleRain);
-  RainbeatDetector.sensitivity(30);
+  RainbeatDetector.sensitivity(15);
 
   DaboTwoRms = new Amplitude(this);
   DaboTwoRms.input(sampleDaboTwo);
@@ -145,6 +158,7 @@ void setup() {
   SingRms.input(sampleSingIlomilo);
 
   flowerSetup();
+  firstFlowerSetup();
 
   fontInc = 20;
   theFont = createFont("Arial Unicode MS", fontInc);
@@ -165,7 +179,14 @@ void setup() {
   her = loadImage("HerKindT.png");
   body = loadImage("ISingTheBodyElectricT.png");
 
-  myStem = new Stem(400, height);
+String[] stronger = loadStrings("Stronger.txt");
+//String[] stronger = loadStrings("Words.txt");
+  strongerAll = join(stronger, " ");
+  wordsStronger = split(strongerAll, " ");
+
+  myStem = new Stem(round(displayWidth*0.4), round(displayHeight*0.4));
+
+
   flowers1 = new Flower1 (0, 0);
   //moved this to setup, no need to recreate each frame
   circles = new Circle[6];
@@ -178,7 +199,7 @@ void setup() {
   // also smooth only needs to be called once
   // unless ther is a noSmooth() somewhere
   smooth();
-  
+
   segments = 10;
   x1 = random(width * 0.30, width * 0.4);// need to change it to random later
   y1 = random(height * 0.30, height * 0.55);// need to change it to random later
@@ -186,12 +207,36 @@ void setup() {
 
 void draw() {
   //background(bg);
-
+  //println("mouseX " +mouseX);
+  //  println("mouseY " +mouseY);
   Position = sampleDance.position();
   drawRms();
   drawDaboTwoRms();
   drawSingRms();
   playSoundFiles();
+
+  if (DancebeatDetector.isBeat() && shape == true) {
+    //push();
+    noStroke();
+    firstFlowerSetup();
+    //vary the transparancy of the faux bg layer
+    float t = map(sin(radians(frameCount)), -1, 1, 10, 45);
+    fill(bg, t);
+    for (firstFlower firstFlower : firstFlowers ) {
+      firstFlower.update();
+      //rectMode(CORNER);
+
+      rect(0, 0, width, height);
+    }
+    //pop();
+    
+  }
+if (frameCount%6>=1 && shape==true) {
+  wordDraw();
+  if (wordX < -100) {
+    wordX = height/2;
+  }
+   }
 
   if (rainStart == true) {
     background(bg);
@@ -199,29 +244,30 @@ void draw() {
     for (Stream s : streams) {
       s.update();
     }
-    if(Position>90){
+
+    if (Position>90) {
       //if (frameCount%9>7) {
-        if(RainbeatDetector.isBeat()){
-    displayPoetry();
+      if (RainbeatDetector.isBeat()) {
+        displayPoetry();
+      }
+
+      lighten--;
+
+      float grow = 0;
+      //translate(myStem.initalloX, myStem.initalloY);
+      myStem.drawStem();
+
+      translate(myStem.initalloX, myStem.initalloY-(myCountForGrow)-40);
+      //translate(myStem.initalloX, myStem.initalloY);
+      if (frameCount>10) {
+        flowers1.grow();
+        flowers1.display();
+      }
+
+      if (myCountForGrow<200)
+        myCountForGrow+=1.28;
+    }
   }
-  lighten--;
-
-
-  float grow = 0;
-  //translate(myStem.initalloX, myStem.initalloY);
-  myStem.drawStem();
-
-  translate(myStem.initalloX, myStem.initalloY-(myCountForGrow));
-  if (frameCount>10) {
-    flowers1.grow();
-    flowers1.display();
-  }
-
-  if (myCountForGrow<200)
-    myCountForGrow+=1.28;
-}
-  }
-  
 }// END DRAW
 
 void drawRms() {
@@ -269,11 +315,10 @@ void drawSingRms() {
 void playSoundFiles() {
   if ((Position >= 0.0) && (Position < 3.271)) {
     sampleDance.pan(-1.0);
-   
+    shape = true;
     if (DancebeatDetector.isBeat()) {
       //myPort.write(0); //upper left
       println("0");
-      
     } else {
     }
   }
@@ -310,33 +355,31 @@ void playSoundFiles() {
       //myPort.write(3);
       flag = false;
       println("Cow");
-       
     } else {
     }
   }
   if ((Position >= 19.360) && (Position < 19.6)) {
-     
+
     if (flag == false) {
       sampleBirds.play();
       flag = true;
       //println("cuckoo");
       //println("flag " + flag);
-       
     } else {
     }
   }
   if ((Position >= 20.610) && (Position < 20.70)) {
-   
+    shape = false;
     if (flag == true) {
       //myPort.write(4);//comment out if vest not attached
       flag = false;
       println("cuckooHaptic");
-      //println("flag " + flag); 
+      //println("flag " + flag);
     } else {
     }
   }
   if ((Position >= 29.185) && (Position < 50.6)) {
-    
+
     if (flag == false) {
       sampleDaboOne.play();
       //println("Dabo");
@@ -352,7 +395,7 @@ void playSoundFiles() {
     //  if ((readNumber >= 15.0) && (readNumber < 50.0)) {
     //    temperature.add(readNumber);
     //    println(temperature.get(0));
-    //  } 
+    //  }
     //  if ((readNumber >= 50.0) && (readNumber < 200.0)) {
     //    threeHeartbeat.add(readNumber/80);
     //    println(threeHeartbeat.get(0));
@@ -374,24 +417,24 @@ void playSoundFiles() {
       int R = 110;//170
       int G = 43;//67
       int B = 56;//88
-      for (int i = 0; i < segments; i++){
+      for (int i = 0; i < segments; i++) {
         float xRandom = random(-(width * 0.04), width * 0.04);
         float yRandom = random(-(height * 0.05), height * 0.05);// value smaller the more curve
         float x = (x1 += xRandom);
         float y = (y1 += yRandom);
-    // Add point to curve
-        stroke(R, G, B, random(10,20));
+        // Add point to curve
+        stroke(R, G, B, random(10, 20));
         strokeWeight(random(10, 60));
-        curveVertex(x, y); 
-      //point(x + 8, y + 8);
-        R += random(-3,3);
-        G += random(-3,3);
-        B -= random(-3,3);
-    }
-    curveVertex(x1, y1); 
-    endShape(); 
-    x1 = random(width * 0.3, width * 0.4);
-    y1 = random(height * 0.3, height * 0.55);
+        curveVertex(x, y);
+        //point(x + 8, y + 8);
+        R += random(-3, 3);
+        G += random(-3, 3);
+        B -= random(-3, 3);
+      }
+      curveVertex(x1, y1);
+      endShape();
+      x1 = random(width * 0.3, width * 0.4);
+      y1 = random(height * 0.3, height * 0.55);
     } else {
     }
   }
@@ -410,63 +453,62 @@ void playSoundFiles() {
         sampleHeartbeat.play();
         sampleHeartbeat.rate(1.0);
         flag = false;
-      }  
-    } 
+      }
+    }
     if (HeartbeatDetector.isBeat()) {
-       image(heart, 30, 30, width - 100, height -100);
-     } else {
-       image(heart, 0, 0, width, height);
+      image(heart, 30, 30, width - 100, height -100);
+    } else {
+      image(heart, 0, 0, width, height);
     }
   }
   if ((Position >= 61.0) && (Position < 61.2)) {
     if (swift == true) {
-      background(25, 28, 26); 
+      background(25, 28, 26);
       sampleDaboTwo.play();
       swift = false;
       //println("DaboTwo");
-     
     } else {
     }
   }
   if ((Position >= 61.2) && (Position < 67.0)) {
-     //myPort.write(new_DaboTwoRms_scaled);
-     background(25, 28, 26);  
-      //red
-     int R = 110;//170
-     int G = 43;//67
-     int B = 56;//88
-     if (new_DaboTwoRms_scaled == 255) {
-       beginShape();
-       noFill();
-       stroke(R, G, B, random(10,255));
-       strokeWeight(random(5,30));
-       x1 = random(width * 0.35, width * 0.65);// need to change it to random later
-       y1 = random(height * 0.35, height * 0.65);
-       curveVertex(x1, y1);
-       for (int h = 0; h < 4; h++) {
-         float xRandom = random(-(width * 0.5), width * 0.5);
-         float yRandom = random(-(height * 0.5), height * 0.5);// value smaller the more curve
-         float x = (x1 += xRandom);
-         float y = (y1 += yRandom);
-         //beginShape();
-         curveVertex(x, y); 
-         R += random(-5,5);
-         G += random(-5,5);
-         B -= random(-5,5);
-         //ellipse(x1 + xRandom, y1 + xRandom, random(10,100), random(10,100));
-       }
-       //beginShape();
-       curveVertex(x1, y1); 
-       endShape();
-       }
-  } 
+    //myPort.write(new_DaboTwoRms_scaled);
+    background(25, 28, 26);
+    //red
+    int R = 110;//170
+    int G = 43;//67
+    int B = 56;//88
+    if (new_DaboTwoRms_scaled == 255) {
+      beginShape();
+      noFill();
+      stroke(R, G, B, random(10, 255));
+      strokeWeight(random(5, 30));
+      x1 = random(width * 0.35, width * 0.65);// need to change it to random later
+      y1 = random(height * 0.35, height * 0.65);
+      curveVertex(x1, y1);
+      for (int h = 0; h < 4; h++) {
+        float xRandom = random(-(width * 0.5), width * 0.5);
+        float yRandom = random(-(height * 0.5), height * 0.5);// value smaller the more curve
+        float x = (x1 += xRandom);
+        float y = (y1 += yRandom);
+        //beginShape();
+        curveVertex(x, y);
+        R += random(-5, 5);
+        G += random(-5, 5);
+        B -= random(-5, 5);
+        //ellipse(x1 + xRandom, y1 + xRandom, random(10,100), random(10,100));
+      }
+      //beginShape();
+      curveVertex(x1, y1);
+      endShape();
+    }
+  }
   if ((Position >= 67.0) && (Position < 75.0)) {
     translate(width/2, height/2);
     for (int n = 0; n < 5; n++) {
       rotate(TWO_PI/(n+1));
       angle1 = random(TWO_PI);
       angle2 = random(TWO_PI);
-   
+
       float x3 = dia * sin(angle1);
       float y3 = dia * cos(angle1);
       float x4 = dia * sin(angle2);
@@ -476,30 +518,29 @@ void playSoundFiles() {
       float x_ = random(-xyVar, xyVar);
       float y_ = random(-xyVar, xyVar);
       noFill();
-      stroke(#279A8B,10);
+      stroke(#279A8B, 10);
       strokeWeight(10);
-      bezier(x3, y3, x3 + x_, y3, x3, y3 + y_, x3 + xyVar, y3 + xyVar);  
-   } 
+      bezier(x3, y3, x3 + x_, y3, x3, y3 + y_, x3 + xyVar, y3 + xyVar);
+    }
   }
   if ((Position >= 75.0) && (Position < 79.0)) {
     //myPort.write(new_DaboTwoRms_scaled);
     translate(width/2, height/2);
     for (int n = 0; n < 10; n++) {
-    strokeWeight(5);
-    stroke(#6be758,255);
+      strokeWeight(5);
+      stroke(#6be758, 255);
       angle1 = random(TWO_PI);
       angle2 = random(TWO_PI);
-   
+
       float x3 = dia * sin(angle1);
       float y3 = dia * cos(angle1);
       float x4 = dia * sin(angle2);
       float y4 = dia * cos(angle2);
       line(x3, y3, x4, y4);
-   }
-    
+    }
   }
   if ((Position >= 79.0) && (Position < 79.736)) {
-    background(25, 28, 26); 
+    background(25, 28, 26);
     noStroke();
     lights();
     directionalLight(250, 254, 151, 0, -2, 0);
@@ -510,13 +551,13 @@ void playSoundFiles() {
     sphere(dia);
     popMatrix();
     if (swift == false) {
-    //myPort.clear();
-    //myPort.stop();
-    //String portName = Serial.list()[4];
-    //myPort = new Serial(this, portName, 115200);
-    swift = true;
-    println("Swift to stroke");
-    println("swift "+swift);
+      //myPort.clear();
+      //myPort.stop();
+      //String portName = Serial.list()[4];
+      //myPort = new Serial(this, portName, 115200);
+      swift = true;
+      println("Swift to stroke");
+      println("swift "+swift);
     }
   }
   if ((Position >= 79.736) && (Position < 79.8)) {
@@ -527,49 +568,49 @@ void playSoundFiles() {
     }
   }
   if ((Position >= 79.8) && (Position < 84.0)) {
-      background(25, 28, 26); 
-      translate(width/2, height/2, 0);
-      rotateX(rotx);
-      rotateY(roty);
-      rotateZ(rotz);
-      lights();
-      directionalLight(250, 254, 151, 0, -2, 0);
-      spotLight(255, 255, 255, width/2, 600, 200, 0, -1, 0, PI/8, 10);
-      pushMatrix();
-      rotateX(-PI/8);
-      translate(x, y, z);
-      rectMode(CENTER);
-      noStroke();
-      fill(#6be758);
-      lights();
-      sphere(dia);
-      popMatrix();
-      x=x+xs;
-      if (x>230 || x<-230) {
-        x=x-xs;
-        xs=-xs;
-        dia = dia -60;
-      }
-      y=y+ys;
-      if (y>230 || y<-230) {
-        y=y-ys;
-        ys=-ys;
-      }
-      z=z+zs;
-      if (z>230 || z<-230) {
-        z=z-zs;
-        zs=-zs;
-      }
-  // Rotate scene
-      rotx+=0.005;
-      roty+=0.0011;
-      rotz+=0.0013;
+    background(25, 28, 26);
+    translate(width/2, height/2, 0);
+    rotateX(rotx);
+    rotateY(roty);
+    rotateZ(rotz);
+    lights();
+    directionalLight(250, 254, 151, 0, -2, 0);
+    spotLight(255, 255, 255, width/2, 600, 200, 0, -1, 0, PI/8, 10);
+    pushMatrix();
+    rotateX(-PI/8);
+    translate(x, y, z);
+    //rectMode(CENTER);
+    noStroke();
+    fill(#6be758);
+    lights();
+    sphere(dia);
+    popMatrix();
+    x=x+xs;
+    if (x>230 || x<-230) {
+      x=x-xs;
+      xs=-xs;
+      dia = dia -60;
+    }
+    y=y+ys;
+    if (y>230 || y<-230) {
+      y=y-ys;
+      ys=-ys;
+    }
+    z=z+zs;
+    if (z>230 || z<-230) {
+      z=z-zs;
+      zs=-zs;
+    }
+    // Rotate scene
+    rotx+=0.005;
+    roty+=0.0011;
+    rotz+=0.0013;
   }
   if ((Position >= 84.0) && (Position < 85.0)) {
     if (swift == false) {
       sampleRain.play();
       rainStart = true;
-      
+
       //myPort.clear();
       //myPort.stop();
       //String portName = Serial.list()[5];
@@ -578,10 +619,10 @@ void playSoundFiles() {
     }
   }
   if ((Position >= 103.671) && (Position < 103.8)) {
-  
+
     if (swift == true) {
       rainStart = false;
-    
+
       sampleSingIlomilo.play();
       sampleSingIlomilo.rate(1.1);
       swift = false;
@@ -594,20 +635,21 @@ void playSoundFiles() {
     if (SingbeatDetector.isBeat()) {
       //myPort.write(8);//comment out if vest not attached
       //println("8");
-      if(Position > 110){
-      push();
-      noStroke();
-      flowerSetup();
-      //vary the transparancy of the faux bg layer
-      float t = map(sin(radians(frameCount)), -1, 1, 10, 45);
-      fill(bg, t);
-      //shadow faux background layer
-      rect(0, 0, width, height);
+      if (Position > 110) {
+        push();
+        noStroke();
+        flowerSetup();
+        //vary the transparancy of the faux bg layer
+        float t = map(sin(radians(frameCount)), -1, 1, 10, 45);
+        fill(bg, t);
+        //shadow faux background layer
+        //rectMode(CORNER);
+        //rect(0, 0, displayWidth, displayHeight);
 
-      for (Flower flower : flowers ) {
-        flower.update();
-      }
-      pop();
+        for (Flower flower : flowers ) {
+          flower.update();
+        }
+        pop();
       }
     } else {
     }
