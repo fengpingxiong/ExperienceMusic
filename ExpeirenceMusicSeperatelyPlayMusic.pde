@@ -1,14 +1,16 @@
 import processing.sound.*;
 import processing.serial.*;
-Serial myPort;
+//Serial myPort;
 SoundFile sampleDance;
 SoundFile sampleCow;
 SoundFile sampleBirds;
 //SoundFile sampleFullfill;
 SoundFile sampleDaboOne;
 SoundFile sampleHeartbeat;
+SoundFile sampleHeartbeatDwon;
 SoundFile sampleDaboTwo;
 SoundFile sampleRain;
+SoundFile sampleRainShort;
 SoundFile sampleSingIlomilo;
 SoundFile sampleHalfOne;
 
@@ -56,6 +58,8 @@ int DaboTwoRms_rms;
 boolean flag = true;
 boolean swift = true;
 boolean temper = true;
+boolean playRain = true;
+boolean playHeart = true;
 //boolean oxy = true;
 boolean shape = false;
 
@@ -119,20 +123,22 @@ void setup() {
   background(bg);
   //background(#28282d);
 
-  String portName = Serial.list()[5];
-  myPort = new Serial(this, portName, 115200);
-  printArray(Serial.list());
-  myPort.bufferUntil('\n');
+  //String portName = Serial.list()[5];
+  //myPort = new Serial(this, portName, 115200);
+  //printArray(Serial.list());
+  //myPort.bufferUntil('\n');
 
-  printArray(Sound.list());
+  //printArray(Sound.list());
 
   sampleDance = new SoundFile(this, "DanceOneLonger2.wav");
   sampleCow = new SoundFile(this, "cowleft.mp3");
   sampleBirds = new SoundFile(this, "cuckoo.mp3");
   sampleDaboOne = new SoundFile(this, "DaboOne.mp3");
   sampleHeartbeat = new SoundFile(this, "heartbeat6.mp3");
+  sampleHeartbeatDwon = new SoundFile(this, "heartBeatDown.wav");
   sampleDaboTwo = new SoundFile(this, "DaboTwo.mp3");
   sampleRain = new SoundFile(this, "Rain.mp3");
+  sampleRainShort = new SoundFile(this, "RainShort.wav");
   sampleSingIlomilo = new SoundFile(this, "SingIlomilo.mp3");
 
   sampleDance.play();
@@ -316,7 +322,7 @@ void playSoundFiles() {
     sampleDance.pan(-1.0);
     shape = true;
     if (DancebeatDetector.isBeat()) {
-      myPort.write(0); //upper left
+      //myPort.write(0); //upper left
       //println("0");
     } else {
     }
@@ -324,7 +330,7 @@ void playSoundFiles() {
   if ((Position >= 3.271) && (Position < 5.29)) {
     sampleDance.pan(1.0);
     if (DancebeatDetector.isBeat()) {
-      myPort.write(1); // upper right
+      //myPort.write(1); // upper right
       //println("1");
     } else {
     }
@@ -332,7 +338,7 @@ void playSoundFiles() {
   if ((Position >= 5.29) && (Position < 7.253)) {
     sampleDance.pan(-1.0);
     if (DancebeatDetector.isBeat()) {
-      myPort.write(0);//upper left
+      //myPort.write(0);//upper left
       //println("0");
     } else {
     }
@@ -340,18 +346,18 @@ void playSoundFiles() {
   if ((Position >= 7.253) && (Position < 10.24)) {//8.01
     sampleDance.pan(0.0);
     if (DancebeatDetector.isBeat()) {
-      myPort.write(2);//mid belly button motor
+      //myPort.write(2);//mid belly button motor
       //println("2");
     } else {
     }
   }
   if ((Position >= 10.24) && (Position < 16.006)) {
-    myPort.write(new_rms_scaled);
+    //myPort.write(new_rms_scaled);
   }
   if ((Position >= 16.111) && (Position < 16.211)) {
     if (flag == true) {
       sampleCow.play();
-      myPort.write(3);
+      //myPort.write(3);
       flag = false;
     } else {
     }
@@ -367,35 +373,41 @@ void playSoundFiles() {
   if ((Position >= 20.610) && (Position < 20.70)) {
     shape = false;
     if (flag == true) {
-      myPort.write(4);//comment out if vest not attached
+      //myPort.write(4);//comment out if vest not attached
       flag = false;
     } else {
     }
   }
-  if ((Position >= 29.185) && (Position < 50.6)) {
-
+  if ((Position >= 29.0) && (Position < 29.185)) {
+    if (playRain == true) {
+      sampleRainShort.play(1.0, 0.3);
+      playRain = false;
+    } else {
+    }
+  }
+  if ((Position >= 39.185) && (Position < 60.6)) {
     if (flag == false) {
       sampleDaboOne.play();
       flag = true;
     }
-    myPort.write(5);//comment out if vest not attached
-    if ( myPort.available() > 0) {  // If data is available,
-      String value = myPort.readString();         // read it and store it in val
-      value.trim();
-      //println(value);
-      readNumber = float(value);
-      readNumber = abs(readNumber);
-      if ((readNumber >= 15.0) && (readNumber < 50.0)) {
-        temperature.add(readNumber);
-        //println(temperature.get(0));
-      } 
-      if ((readNumber >= 50.0) && (readNumber < 200.0)) {
-        threeHeartbeat.add(readNumber/80);
-        //println(threeHeartbeat.get(0));
-      }
-    }
+    //myPort.write(5);//comment out if vest not attached
+    //if ( myPort.available() > 0) {  // If data is available,
+    //  String value = myPort.readString();         // read it and store it in val
+    //  value.trim();
+    //  //println(value);
+    //  readNumber = float(value);
+    //  readNumber = abs(readNumber);
+    //  if ((readNumber >= 15.0) && (readNumber < 50.0)) {
+    //    temperature.add(readNumber);
+    //    //println(temperature.get(0));
+    //  } 
+    //  if ((readNumber >= 50.0) && (readNumber < 200.0)) {
+    //    threeHeartbeat.add(readNumber/80);
+    //    //println(threeHeartbeat.get(0));
+    //  }
+    //}
     if (DabobeatDetector.isBeat()) {
-      myPort.write(6);//comment out if vest not attached
+      //myPort.write(6);//comment out if vest not attached
       beginShape();
       noFill();
       stroke(240, 245, 241);
@@ -425,7 +437,7 @@ void playSoundFiles() {
     } else {
     }
   }
-  if ((Position >= 52.50) && (Position < 58)) {
+  if ((Position >= 62.50) && (Position < 68)) {
     if (flag == true) {
       saveFrame("abstractHeart.png");
       if (threeHeartbeat.size() > 0) {
@@ -437,7 +449,7 @@ void playSoundFiles() {
       } else {
         heart = loadImage("abstractHeart.png");
         sampleHeartbeat.play();
-        sampleHeartbeat.rate(1.0);
+        //sampleHeartbeat.rate(1.0);
         flag = false;
       }
     }
@@ -447,7 +459,7 @@ void playSoundFiles() {
       image(heart, 0, 0, width, height);
     }
   }
-  if ((Position >= 61.0) && (Position < 61.2)) {
+  if ((Position >= 71.0) && (Position < 71.2)) {
     if (swift == true) {
       background(bg);
       sampleDaboTwo.play();
@@ -455,8 +467,8 @@ void playSoundFiles() {
     } else {
     }
   }
-  if ((Position >= 61.2) && (Position < 67.0)) {
-    myPort.write(new_DaboTwoRms_scaled);
+  if ((Position >= 71.2) && (Position < 77.0)) {
+    //myPort.write(new_DaboTwoRms_scaled);
     background(bg);
     //red
     int R = 110;//170
@@ -487,8 +499,8 @@ void playSoundFiles() {
       endShape();
     }
   }
-  if ((Position >= 67.0) && (Position < 75.0)) {
-    myPort.write(new_DaboTwoRms_scaled);
+  if ((Position >= 77.0) && (Position < 85.0)) {
+    //myPort.write(new_DaboTwoRms_scaled);
     translate(width/2, height/2);
     for (int n = 0; n < 5; n++) {
       rotate(TWO_PI/(n+1));
@@ -509,7 +521,7 @@ void playSoundFiles() {
       bezier(x3, y3, x3 + x_, y3, x3, y3 + y_, x3 + xyVar, y3 + xyVar);
     }
   }
-  if ((Position >= 75.0) && (Position < 79.0)) {
+  if ((Position >= 85.0) && (Position < 89.0)) {
     //myPort.write(new_DaboTwoRms_scaled);
     translate(width/2, height/2);
     for (int n = 0; n < 10; n++) {
@@ -525,15 +537,15 @@ void playSoundFiles() {
       line(x3, y3, x4, y4);
     }
   }
-  if ((Position >= 79.0) && (Position < 79.736)) {
-    if (k < (temperature.get(0)*2)) {
-      colorR = int(25 + k + 1);
-      colorG = int(28 + k);
-      colorB = int(26 + k);
-      bg = color(colorR, colorG, colorB);
-      background(bg);
-      k += 1;
-    }
+  if ((Position >= 89.0) && (Position < 89.736)) {
+    //if (k < (temperature.get(0)*2)) {
+    //  colorR = int(25 + k + 1);
+    //  colorG = int(28 + k);
+    //  colorB = int(26 + k);
+    //  bg = color(colorR, colorG, colorB);
+    //  background(bg);
+    //  k += 1;
+    //}
     noStroke();
     lights();
     directionalLight(250, 254, 151, 0, -2, 0);
@@ -541,32 +553,32 @@ void playSoundFiles() {
     pushMatrix();
     translate(width/2, height/2, 0);
     fill(#c93251);
-    sphere(dia);
+    sphere(dia-19);
     popMatrix();
     if (swift == false) {
-      myPort.clear();
-      myPort.stop();
-      String portName = Serial.list()[4];
-      myPort = new Serial(this, portName, 115200);
+      //myPort.clear();
+      //myPort.stop();
+      //String portName = Serial.list()[4];
+      //myPort = new Serial(this, portName, 115200);
       swift = true;
     }
   }
-  if ((Position >= 79.736) && (Position < 79.8)) {
+  if ((Position >= 89.736) && (Position < 89.8)) {
     if (swift == true) {
-      myPort.write(7);//comment out if vest not attached
+      //myPort.write(7);//comment out if vest not attached
       swift = false;
     } else {
     }
   }
-  if ((Position >= 79.8) && (Position < 84.0)) {
-    if (k < (temperature.get(0)*7)) {
-      colorR = int(25 + 1.2*k + 1);
-      colorG = int(28 + 1.15*k);
-      colorB = int(26 + 1.1*k);
-      bg = color(colorR, colorG, colorB);
-      background(bg);
-      k += 1;
-    }
+  if ((Position >= 89.8) && (Position < 94.0)) {
+    //if (k < (temperature.get(0)*7)) {
+    //  colorR = int(25 + 1.2*k + 1);
+    //  colorG = int(28 + 1.15*k);
+    //  colorB = int(26 + 1.1*k);
+    //  bg = color(colorR, colorG, colorB);
+    //  background(bg);
+    //  k += 1;
+    //}
     background(bg);
     translate(width/2, height/2, 0);
     rotateX(rotx);
@@ -581,7 +593,7 @@ void playSoundFiles() {
     noStroke();
     fill(#c93251);
     lights();
-    sphere(dia);
+    sphere(dia-19);
     popMatrix();
     x=x+xs;
     if (x>230 || x<-230) {
@@ -604,19 +616,19 @@ void playSoundFiles() {
     roty+=0.0011;
     rotz+=0.0013;
   }
-  if ((Position >= 84.0) && (Position < 85.0)) {
+  if ((Position >= 94.0) && (Position < 95.0)) {
     if (swift == false) {
       sampleRain.play();
       rainStart = true;
 
-      myPort.clear();
-      myPort.stop();
-      String portName = Serial.list()[5];
-      myPort = new Serial(this, portName, 115200);
+      //myPort.clear();
+      //myPort.stop();
+      //String portName = Serial.list()[5];
+      //myPort = new Serial(this, portName, 115200);
       swift = true;
     }
   }
-  if ((Position >= 103.671) && (Position < 103.8)) {
+  if ((Position >= 113.671) && (Position < 113.8)) {
 
     if (swift == true) {
       rainStart = false;
@@ -627,11 +639,12 @@ void playSoundFiles() {
     } else {
     }
   }
-  if ((Position >= 103.8)) {
-    myPort.write(new_SingRms_scaled);
+  if (Position >= 113.8) {
+    //myPort.write(new_SingRms_scaled);
     if (SingbeatDetector.isBeat()) {
-      myPort.write(8);//comment out if vest not attached
+      //myPort.write(8);//comment out if vest not attached
       if (Position > 110) {
+    //myPort.write(new_SingRms_scaled);) {
         push();
         noStroke();
         flowerSetup();
@@ -648,6 +661,22 @@ void playSoundFiles() {
         pop();
       }
     } else {
+    }
+  }
+  
+  if ((Position >= 212.0) && (Position < 212.1)) {
+    if (playHeart == true) {
+      background(bg);
+      if (threeHeartbeat.size() > 0) {
+        float number = threeHeartbeat.get(0);
+        sampleHeartbeatDwon.play();
+        sampleHeartbeatDwon.rate(number);
+        playHeart = false;
+      } else {
+        sampleHeartbeatDwon.play();
+        //sampleHeartbeatDwon.rate(1.0);
+        playHeart = false;
+      }
     }
   }
 }//end Play Sound Files
