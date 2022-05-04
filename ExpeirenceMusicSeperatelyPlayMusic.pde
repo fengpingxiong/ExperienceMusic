@@ -194,8 +194,8 @@ void setup() {
   her = loadImage("HerKindT.png");
   body = loadImage("ISingTheBodyElectricT.png");
 
-String[] stronger = loadStrings("Stronger.txt");
-//String[] stronger = loadStrings("Words.txt");
+//String[] stronger = loadStrings("Stronger.txt");
+String[] stronger = loadStrings("Words.txt");
   strongerAll = join(stronger, " ");
   wordsStronger = split(strongerAll, " ");
 
