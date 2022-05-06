@@ -1,10 +1,9 @@
 import processing.sound.*;
 import processing.serial.*;
-//Serial myPort;
+Serial myPort;
 SoundFile sampleDance;
 SoundFile sampleCow;
 SoundFile sampleBirds;
-//SoundFile sampleFullfill;
 SoundFile sampleDaboOne;
 SoundFile sampleHeartbeat;
 SoundFile sampleHeartbeatDwon;
@@ -21,24 +20,34 @@ BeatDetector SingbeatDetector;
 BeatDetector RainbeatDetector;
 
 Amplitude rms;
-//Amplitude birdRms;
+Amplitude cowRms;
+Amplitude cukcooRms;
 Amplitude DaboTwoRms;
 Amplitude SingRms;
 
 PImage heart;
+PImage oneBackground;
+PImage twoBackground;
+PShape s;
+PShape s1;
+PShape cow;
+PShape cuckooS;
 
 float Position;
+float rainPosition;
 float smoothingFactor = 0.25;
 float sum;
 float DaboSum;
 float SingSum;
 float readNumber;
-float x1, y1, x2, y2, x, y, z;
+float x1, y1, x2, y2, x3, y3, x, y, z;
 float xs=9, ys=8.1, zs=7;
 float rotz=0, rotx=0, roty=0;
 float dia = 300;
 float sw = 10;
 float angle1, angle2;
+float cowSum;
+float cuckooSum;
 
 int segments;
 int colorR;
@@ -51,6 +60,8 @@ ArrayList<Float> temperature = new ArrayList<Float>();
 //ArrayList<Float> oxygen = new ArrayList<Float>();
 
 int new_rms_scaled;
+int new_cowRms_scaled;
+int new_cukcooRms_scaled;
 int new_DaboTwoRms_scaled;
 int new_SingRms_scaled;
 int DaboTwoRms_rms;
@@ -60,13 +71,18 @@ boolean swift = true;
 boolean temper = true;
 boolean playRain = true;
 boolean playHeart = true;
-//boolean oxy = true;
 boolean shape = false;
+boolean playDance = true;
+boolean line = true;
+boolean cowShape = true;
+boolean CShape = true;
 
 //flower colors Green, Red, orange, dark red
 color[] cols = {#279A8B, #E13F88, #FFBB3E, #DE0150, #D6E679, #BB86EE};
 //textrain colors
 color[] cols2 = {#1F7A6E, #912958, #805E1F, #DE0150, #9C0036, #745394};
+// sphere colors
+color[] cols3 = {#1F7A6E, #912958, #805E1F, #9C0036, #745394};
 //background color
 color bg;
 
@@ -99,8 +115,8 @@ Circle circles[];
 Flower1 flowers1 = new Flower1();
 float scaleFactor=0.5;
 int myCountForGrow=0;
-float wordX= 500;
-float strongerY = random(150, 650);
+float wordX= 0;//500
+float strongerY = random(0, 450);//(150,650)
 
 PImage history;
 PImage brave;
@@ -123,13 +139,14 @@ void setup() {
   background(bg);
   //background(#28282d);
 
-  //String portName = Serial.list()[5];
-  //myPort = new Serial(this, portName, 115200);
-  //printArray(Serial.list());
-  //myPort.bufferUntil('\n');
+  String portName = Serial.list()[5];
+  myPort = new Serial(this, portName, 115200);
+  printArray(Serial.list());
+  myPort.bufferUntil('\n');
 
-  //printArray(Sound.list());
-
+  printArray(Sound.list());
+  oneBackground = loadImage("1Background.png");
+  twoBackground = loadImage("2Background.JPG");
   sampleDance = new SoundFile(this, "DanceOneLonger2.wav");
   sampleCow = new SoundFile(this, "cowleft.mp3");
   sampleBirds = new SoundFile(this, "cuckoo.mp3");
@@ -141,14 +158,14 @@ void setup() {
   sampleRainShort = new SoundFile(this, "RainShort.wav");
   sampleSingIlomilo = new SoundFile(this, "SingIlomilo.mp3");
 
-  sampleDance.play();
+  
 
   rms = new Amplitude(this);
   rms.input(sampleDance);
 
   DancebeatDetector = new BeatDetector(this);
   DancebeatDetector.input(sampleDance);
-  DancebeatDetector.sensitivity(200);
+  DancebeatDetector.sensitivity(50);
 
   DabobeatDetector = new BeatDetector(this);
   DabobeatDetector.input(sampleDaboOne);
@@ -165,6 +182,12 @@ void setup() {
   RainbeatDetector = new BeatDetector(this);
   RainbeatDetector.input(sampleRain);
   RainbeatDetector.sensitivity(15);
+  
+  cowRms = new Amplitude(this);
+  cowRms.input(sampleCow);
+  
+  cukcooRms = new Amplitude(this);
+  cukcooRms.input(sampleBirds);
 
   DaboTwoRms = new Amplitude(this);
   DaboTwoRms.input(sampleDaboTwo);
@@ -195,7 +218,7 @@ void setup() {
   body = loadImage("ISingTheBodyElectricT.png");
 
 //String[] stronger = loadStrings("Stronger.txt");
-String[] stronger = loadStrings("Words.txt");
+  String[] stronger = loadStrings("Words.txt");
   strongerAll = join(stronger, " ");
   wordsStronger = split(strongerAll, " ");
 
@@ -218,40 +241,44 @@ String[] stronger = loadStrings("Words.txt");
   segments = 10;
   x1 = random(width * 0.30, width * 0.4);// need to change it to random later
   y1 = random(height * 0.30, height * 0.55);// need to change it to random later
+  x3 = displayWidth/2.2;
+  y3 = displayHeight/2.2;
+  
+  s = loadShape("line.svg");
+  s1 = loadShape("line2.svg");
+  cow = loadShape("cow.svg");
+  cuckooS = loadShape("cuckooShape.svg");
 }//END SETUP
 
 void draw() {
+  if (playRain == true) {
+    sampleRainShort.play(1.0, 0.2);
+    playRain = false;
+  }
+  if(playDance == true) {
+    rainPosition = sampleRainShort.position();
+    if (rainPosition > 0 && rainPosition < 9.0) {
+      //if (frameCount%6>=1 && shape==true) {
+        wordDraw();
+        if (wordX < -100) {
+          wordX = height/4;
+        }
+      //}
+    }
+    if (rainPosition >= 9.0 && rainPosition <= 10) {
+      sampleDance.play();
+      playDance = false;
+    } 
+  }
   //background(bg);
   //println("mouseX " +mouseX);
   //  println("mouseY " +mouseY);
   Position = sampleDance.position();
+  playSoundFiles();
   drawRms();
   drawDaboTwoRms();
   drawSingRms();
-  playSoundFiles();
-
-  if (DancebeatDetector.isBeat() && shape == true) {
-    //push();
-    noStroke();
-    firstFlowerSetup();
-    //vary the transparancy of the faux bg layer
-    float t = map(sin(radians(frameCount)), -1, 1, 10, 45);
-    fill(bg, t);
-    for (firstFlower firstFlower : firstFlowers ) {
-      firstFlower.update();
-      //rectMode(CORNER);
-
-      rect(0, 0, width, height);
-    }
-    //pop();
-    
-  }
-if (frameCount%6>=1 && shape==true) {
-  wordDraw();
-  if (wordX < -100) {
-    wordX = height/2;
-  }
-   }
+  
 
   if (rainStart == true) {
     background(bg);
@@ -297,7 +324,6 @@ void drawRms() {
 }
 
 void drawDaboTwoRms() {
-  // smooth the rms data by smoothing factor
   DaboSum += (DaboTwoRms.analyze() - DaboSum) * smoothingFactor;
   float rms_scaled = (DaboSum * (height/2) * 5) / 2.5;
   new_DaboTwoRms_scaled = int(rms_scaled);
@@ -307,7 +333,6 @@ void drawDaboTwoRms() {
 }
 
 void drawSingRms() {
-  // smooth the rms data by smoothing factor
   SingSum += (SingRms.analyze() - SingSum) * smoothingFactor;
 
   float rms_scaled = (SingSum * (height/2) * 5) / 2;
@@ -318,52 +343,163 @@ void drawSingRms() {
 }
 
 void playSoundFiles() {
-  if ((Position >= 0.0) && (Position < 3.271)) {
-    sampleDance.pan(-1.0);
-    shape = true;
-    if (DancebeatDetector.isBeat()) {
-      //myPort.write(0); //upper left
-      //println("0");
+  //println(Position);
+  if ((Position > 0.01) && (Position < 3.271)) {
+    sampleDance.pan(-1.0); //left
+    // sguiggly line
+    if (x3 >=-80 ) {
+      background(bg);
+      s.disableStyle();
+      fill(#6F6B50,80);
+      noStroke();
+      shape(s, x3,(y3+random(-20,20)), random(50,150), random(50,150));
+      x3 -= 5;
+    }
+
+   // detect beat and start vibration
+  if (DancebeatDetector.isBeat()) {
+      myPort.write(0); //upper left
+      println("0");
     } else {
     }
   }
   if ((Position >= 3.271) && (Position < 5.29)) {
+    if (line == true) {
+      x3 = displayWidth/2.2;
+      line = false;
+    }
     sampleDance.pan(1.0);
+    // sguiggly line
+    if (x3 <= (displayWidth+30) ) {
+      background(bg);
+      s1.disableStyle();
+      fill(#B19593,80);
+      noStroke();
+      shape(s1, x3,(y3+random(-20,20)), random(50,150), random(50,150));
+      x3 += 10;
+    }
+    // detect beat
     if (DancebeatDetector.isBeat()) {
-      //myPort.write(1); // upper right
-      //println("1");
+      myPort.write(1); // upper right
+      println("1");
     } else {
     }
   }
   if ((Position >= 5.29) && (Position < 7.253)) {
     sampleDance.pan(-1.0);
+    if (line == false) {
+      x3 = displayWidth/2.2;
+      line = true;
+    }
+    // sguiggly line
+    if (x3 >=-100 ) {
+      background(bg);
+      s.disableStyle();
+      fill(#453a5c,150);
+      noStroke();
+      shape(s, x3,(y3 += 1), random(100,200), random(100,200));
+      x3 -= 7;
+    }
     if (DancebeatDetector.isBeat()) {
-      //myPort.write(0);//upper left
-      //println("0");
+      myPort.write(0);//upper left
+      println("0");
     } else {
     }
   }
   if ((Position >= 7.253) && (Position < 10.24)) {//8.01
-    sampleDance.pan(0.0);
+    sampleDance.pan(0.0);  
+    // sguiggly line
+    if (line == true) {
+      x3 = displayWidth/2.3;
+      y3 = displayHeight/2.5;
+      background(bg);
+      s.disableStyle();
+      fill(#6F6B50,90);
+      noStroke();
+      shape(s, (x3 + random(-20,20)),(y3 + random(-20,20)), random(250,300), random(250,30));
+      line = false;
+    }
+    if (line == false) {
+      background(bg);
+      s1.disableStyle();
+      fill(#6F6B50,90);
+      noStroke();
+      shape(s1, x3,y3, random(100,200), random(100,200));
+      line = true;
+    }
     if (DancebeatDetector.isBeat()) {
-      //myPort.write(2);//mid belly button motor
-      //println("2");
+      myPort.write(2);//mid belly button motor
+      println("2");
     } else {
     }
   }
   if ((Position >= 10.24) && (Position < 16.006)) {
-    //myPort.write(new_rms_scaled);
+    myPort.write(new_rms_scaled);
+    // flowers outlines
+    if (DancebeatDetector.isBeat() && shape == true) {
+    //push();
+      noStroke();
+      firstFlowerSetup();
+    //vary the transparancy of the faux bg layer
+      float t = map(sin(radians(frameCount)), -1, 1, 10, 45);
+      fill(bg, t);
+      for (firstFlower firstFlower : firstFlowers ) {
+        firstFlower.update();
+      //rectMode(CORNER);
+
+        rect(0, 0, width, height);
+      }
+    //pop();
+    
+   }
+   //background(oneBackground);
+   //image(oneBackground,0,0,1440, 1079);
+   shape = true;
   }
   if ((Position >= 16.111) && (Position < 16.211)) {
     if (flag == true) {
       sampleCow.play();
-      //myPort.write(3);
+      myPort.write(3);
       flag = false;
     } else {
     }
   }
+  if ((Position >= 16.211) && (Position < 19.211)) {
+    if (cowShape == true) {
+      x3 = 50;
+      y3 = displayHeight/3;
+      cowShape = false;
+    }
+    cowSum += (rms.analyze() - cowSum) * smoothingFactor;
+    float rms_scaled = (cowSum * (height/2) * 5) * 1.5;
+    new_cowRms_scaled = int(rms_scaled);
+    new_cowRms_scaled = new_cowRms_scaled/4;
+    if (new_cowRms_scaled >= 255) {
+      new_cowRms_scaled = 255;
+    }
+    //println(new_cowRms_scaled);
+    if ((x3 <= displayWidth) || (y3>= 0)) {
+      background(bg);
+      cow.disableStyle();
+      fill(#6F6B50,90);
+      noStroke();
+      shape(cow, x3,y3, (172.36 + new_cowRms_scaled),(171.825 + new_cowRms_scaled));
+      x3 += 150;
+      y3 -= 250;       
+    }
+    if ((x3 > displayWidth) || (y3 <0 ) ) {
+      x3 = 200;
+      y3 = displayHeight/4;
+      background(bg);
+      cow.disableStyle();
+      fill(#6F6B50,90);
+      noStroke();
+      shape(cow, x3,y3, (172.36 + new_cowRms_scaled),(171.825 + new_cowRms_scaled));
+      x3 += 150;
+      y3 -= 250; 
+    }
+  }
   if ((Position >= 19.360) && (Position < 19.6)) {
-
     if (flag == false) {
       sampleBirds.play();
       flag = true;
@@ -373,41 +509,70 @@ void playSoundFiles() {
   if ((Position >= 20.610) && (Position < 20.70)) {
     shape = false;
     if (flag == true) {
-      //myPort.write(4);//comment out if vest not attached
+      myPort.write(4);//comment out if vest not attached
       flag = false;
     } else {
     }
   }
-  if ((Position >= 29.0) && (Position < 29.185)) {
-    if (playRain == true) {
-      sampleRainShort.play(1.0, 0.3);
-      playRain = false;
-    } else {
+  if ((Position >= 20.70) && (Position < 29.185)) {
+    if (CShape == true) {
+      x3 = displayWidth;
+      y3 = displayHeight/2;
+      CShape = false;
     }
+    cuckooSum += (cukcooRms.analyze() - cuckooSum) * smoothingFactor;
+    float rms_scaled = (cuckooSum * (height/2) * 5) * 1.5;
+    new_cukcooRms_scaled = int(rms_scaled);
+    new_cukcooRms_scaled = new_cukcooRms_scaled/8;
+    if (new_cukcooRms_scaled >= 255) {
+      new_cukcooRms_scaled = 255;
+    }
+    //println(new_cukcooRms_scaled);
+    if ((x3 <= displayWidth) || (y3 >0 ) ) {
+      background(bg);
+      cuckooS.disableStyle();
+      fill(#84a2ba,80);
+      noStroke();
+      shape(cuckooS, x3,y3, (172.36 + new_cukcooRms_scaled),(171.825 + new_cukcooRms_scaled));
+      x3 -= 5;
+      y3 -= 5; 
+    }
+    if ((x3 < 0) || (y3 >= displayHeight)) {
+      x3 = displayWidth;
+      y3 = displayHeight/2;
+      background(bg);
+      cuckooS.disableStyle();
+      fill(#84a2ba,80);
+      noStroke();
+      shape(cuckooS, x3,y3, (172.36 + new_cukcooRms_scaled),(171.825 + new_cukcooRms_scaled));
+      x3 -= 5;
+      y3 -= 5;
+    }    
   }
-  if ((Position >= 39.185) && (Position < 60.6)) {
+  if ((Position >= 29.185) && (Position < 50.6)) {
     if (flag == false) {
+      background(bg);
       sampleDaboOne.play();
       flag = true;
     }
-    //myPort.write(5);//comment out if vest not attached
-    //if ( myPort.available() > 0) {  // If data is available,
-    //  String value = myPort.readString();         // read it and store it in val
-    //  value.trim();
-    //  //println(value);
-    //  readNumber = float(value);
-    //  readNumber = abs(readNumber);
-    //  if ((readNumber >= 15.0) && (readNumber < 50.0)) {
-    //    temperature.add(readNumber);
-    //    //println(temperature.get(0));
-    //  } 
-    //  if ((readNumber >= 50.0) && (readNumber < 200.0)) {
-    //    threeHeartbeat.add(readNumber/80);
-    //    //println(threeHeartbeat.get(0));
-    //  }
-    //}
+    myPort.write(5);//comment out if vest not attached
+    if ( myPort.available() > 0) {  // If data is available,
+      String value = myPort.readString();         // read it and store it in val
+      value.trim();
+      //println(value);
+      readNumber = float(value);
+      readNumber = abs(readNumber);
+      if ((readNumber >= 15.0) && (readNumber < 50.0)) {
+        temperature.add(readNumber);
+        //println(temperature.get(0));
+      } 
+      if ((readNumber >= 50.0) && (readNumber < 200.0)) {
+        threeHeartbeat.add(readNumber/80);
+        println(threeHeartbeat.get(0));
+      }
+    }
     if (DabobeatDetector.isBeat()) {
-      //myPort.write(6);//comment out if vest not attached
+      myPort.write(6);//comment out if vest not attached
       beginShape();
       noFill();
       stroke(240, 245, 241);
@@ -437,7 +602,7 @@ void playSoundFiles() {
     } else {
     }
   }
-  if ((Position >= 62.50) && (Position < 68)) {
+  if ((Position >= 52.50) && (Position < 58)) {
     if (flag == true) {
       saveFrame("abstractHeart.png");
       if (threeHeartbeat.size() > 0) {
@@ -449,7 +614,6 @@ void playSoundFiles() {
       } else {
         heart = loadImage("abstractHeart.png");
         sampleHeartbeat.play();
-        //sampleHeartbeat.rate(1.0);
         flag = false;
       }
     }
@@ -459,7 +623,7 @@ void playSoundFiles() {
       image(heart, 0, 0, width, height);
     }
   }
-  if ((Position >= 71.0) && (Position < 71.2)) {
+  if ((Position >= 61.0) && (Position < 61.2)) {
     if (swift == true) {
       background(bg);
       sampleDaboTwo.play();
@@ -467,8 +631,8 @@ void playSoundFiles() {
     } else {
     }
   }
-  if ((Position >= 71.2) && (Position < 77.0)) {
-    //myPort.write(new_DaboTwoRms_scaled);
+  if ((Position >= 61.2) && (Position < 67.0)) {
+    myPort.write(new_DaboTwoRms_scaled);
     background(bg);
     //red
     int R = 110;//170
@@ -499,8 +663,8 @@ void playSoundFiles() {
       endShape();
     }
   }
-  if ((Position >= 77.0) && (Position < 85.0)) {
-    //myPort.write(new_DaboTwoRms_scaled);
+  if ((Position >= 67.0) && (Position < 75.0)) {
+    myPort.write(new_DaboTwoRms_scaled);
     translate(width/2, height/2);
     for (int n = 0; n < 5; n++) {
       rotate(TWO_PI/(n+1));
@@ -521,8 +685,8 @@ void playSoundFiles() {
       bezier(x3, y3, x3 + x_, y3, x3, y3 + y_, x3 + xyVar, y3 + xyVar);
     }
   }
-  if ((Position >= 85.0) && (Position < 89.0)) {
-    //myPort.write(new_DaboTwoRms_scaled);
+  if ((Position >= 75.0) && (Position < 79.0)) {
+    myPort.write(new_DaboTwoRms_scaled);
     translate(width/2, height/2);
     for (int n = 0; n < 10; n++) {
       strokeWeight(5);
@@ -537,15 +701,27 @@ void playSoundFiles() {
       line(x3, y3, x4, y4);
     }
   }
-  if ((Position >= 89.0) && (Position < 89.736)) {
-    //if (k < (temperature.get(0)*2)) {
-    //  colorR = int(25 + k + 1);
-    //  colorG = int(28 + k);
-    //  colorB = int(26 + k);
-    //  bg = color(colorR, colorG, colorB);
-    //  background(bg);
-    //  k += 1;
-    //}
+  if ((Position >= 79.0) && (Position < 79.736)) {
+    if (temperature.size()> 0) {
+      if (k < (temperature.get(0)*8)) {
+        colorR = int(25 + k + 1);
+        colorG = int(28 + k);
+        colorB = int(26 + k);
+        bg = color(colorR, colorG, colorB);
+        background(bg);
+        k += 1;
+      }
+      } else{
+        if (k < 200) {
+          colorR = int(25 + k + 1);
+          colorG = int(28 + k);
+          colorB = int(26 + k);
+          bg = color(colorR, colorG, colorB);
+          background(bg);
+          k += 1;
+        }
+      }
+
     noStroke();
     lights();
     directionalLight(250, 254, 151, 0, -2, 0);
@@ -556,29 +732,39 @@ void playSoundFiles() {
     sphere(dia-19);
     popMatrix();
     if (swift == false) {
-      //myPort.clear();
-      //myPort.stop();
-      //String portName = Serial.list()[4];
-      //myPort = new Serial(this, portName, 115200);
+      myPort.clear();
+      myPort.stop();
+      String portName = Serial.list()[4];
+      myPort = new Serial(this, portName, 115200);
       swift = true;
     }
   }
-  if ((Position >= 89.736) && (Position < 89.8)) {
-    if (swift == true) {
-      //myPort.write(7);//comment out if vest not attached
-      swift = false;
-    } else {
+  if ((Position >= 79.8) && (Position < 84.0)) {
+    if (temperature.size()> 0) {
+      if (k < (temperature.get(0)*8)) {
+        colorR = int(25 + k + 1);
+        colorG = int(28 + k);
+        colorB = int(26 + k);
+        bg = color(colorR, colorG, colorB);
+        background(bg);
+        k += 1;
+      }
+      } else{
+        if (k < 200) {
+          colorR = int(25 + k + 1);
+          colorG = int(28 + k);
+          colorB = int(26 + k);
+          bg = color(colorR, colorG, colorB);
+          background(bg);
+          k += 1;
+        }
+      }
+    if ((Position >= 81.0) && (Position < 82.0)) {
+      if (swift == true) {
+        myPort.write(7);//comment out if vest not attached
+        swift = false;
+      }
     }
-  }
-  if ((Position >= 89.8) && (Position < 94.0)) {
-    //if (k < (temperature.get(0)*7)) {
-    //  colorR = int(25 + 1.2*k + 1);
-    //  colorG = int(28 + 1.15*k);
-    //  colorB = int(26 + 1.1*k);
-    //  bg = color(colorR, colorG, colorB);
-    //  background(bg);
-    //  k += 1;
-    //}
     background(bg);
     translate(width/2, height/2, 0);
     rotateX(rotx);
@@ -600,11 +786,27 @@ void playSoundFiles() {
       x=x-xs;
       xs=-xs;
       dia = dia -60;
+      for (int circles = 0; circles < 3; circles++) {
+        pushMatrix();
+        translate((x+random(-dia*3, dia*3)), (y+random(-dia, dia)), z);
+        noStroke();
+        fill(cols3[(int)random(cols3.length)]);
+        sphere(30);
+        popMatrix();
+      }
     }
     y=y+ys;
     if (y>230 || y<-230) {
       y=y-ys;
       ys=-ys;
+      for (int circles = 0; circles < 3; circles++) {
+        pushMatrix();
+        translate((x+random(-dia, dia)), (y+random(-dia*3, dia*3)), z);
+        noStroke();
+        fill(cols3[(int)random(cols3.length)]);
+        sphere(30);
+        popMatrix();
+      }
     }
     z=z+zs;
     if (z>230 || z<-230) {
@@ -616,19 +818,19 @@ void playSoundFiles() {
     roty+=0.0011;
     rotz+=0.0013;
   }
-  if ((Position >= 94.0) && (Position < 95.0)) {
+  if ((Position >= 84.0) && (Position < 85.0)) {
     if (swift == false) {
       sampleRain.play();
       rainStart = true;
 
-      //myPort.clear();
-      //myPort.stop();
-      //String portName = Serial.list()[5];
-      //myPort = new Serial(this, portName, 115200);
+      myPort.clear();
+      myPort.stop();
+      String portName = Serial.list()[5];
+      myPort = new Serial(this, portName, 115200);
       swift = true;
     }
   }
-  if ((Position >= 113.671) && (Position < 113.8)) {
+  if ((Position >= 103.671) && (Position < 103.8)) {
 
     if (swift == true) {
       rainStart = false;
@@ -639,12 +841,11 @@ void playSoundFiles() {
     } else {
     }
   }
-  if (Position >= 113.8) {
-    //myPort.write(new_SingRms_scaled);
+  if (Position >= 103.8) {
+    myPort.write(new_SingRms_scaled);
     if (SingbeatDetector.isBeat()) {
-      //myPort.write(8);//comment out if vest not attached
+      myPort.write(8);//comment out if vest not attached
       if (Position > 110) {
-    //myPort.write(new_SingRms_scaled);) {
         push();
         noStroke();
         flowerSetup();
@@ -664,7 +865,7 @@ void playSoundFiles() {
     }
   }
   
-  if ((Position >= 212.0) && (Position < 212.1)) {
+  if ((Position >= 202.0) && (Position < 202.1)) {
     if (playHeart == true) {
       background(bg);
       if (threeHeartbeat.size() > 0) {
@@ -674,9 +875,16 @@ void playSoundFiles() {
         playHeart = false;
       } else {
         sampleHeartbeatDwon.play();
-        //sampleHeartbeatDwon.rate(1.0);
         playHeart = false;
       }
     }
+  }
+  if (Position >= 212.0) {
+    if (!sampleHeartbeatDwon.isPlaying()) {
+      myPort.clear();
+      myPort.stop();
+    } else {
+    }
+  } else {
   }
 }//end Play Sound Files
