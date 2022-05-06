@@ -22,9 +22,9 @@ void displayPoetry() {
 
 void wordDraw() {
   fill(random(50, 250));
-  text(wordsStronger[int(random(wordsStronger.length))], wordX, strongerY+350);
-  text(wordsStronger[int(random(wordsStronger.length))], wordX+250, strongerY+200);
-  text(wordsStronger[int(random(wordsStronger.length))], wordX+500, strongerY+500);
+  text(wordsStronger[int(random(wordsStronger.length))], wordX, strongerY);//strongerY+350
+  text(wordsStronger[int(random(wordsStronger.length))], wordX+100, strongerY+200);//wordX+250,strongerY+200
+  text(wordsStronger[int(random(wordsStronger.length))], wordX+200, strongerY+400);//wordX+500, strongerY+500
   //println(wordsStronger.length);
   //println(index);
   //index++;
@@ -34,16 +34,16 @@ void wordDraw() {
     //index++;
   //}
 if(frameCount%9==1){
-  wordX = random(width*.5, width);
-  strongerY = random(height*.2, height*.8);
+  wordX = random(0, width);//width*.2, width
+  strongerY = random(0, height*.6);//height*.2, height*.8
 }
 if(frameCount%7==2){
-  wordX = random(width*.5, width);
-  strongerY = random(height*.2, height*.8);
+  wordX = random(0, width);
+  strongerY = random(0, height*.8);
 }
 if(frameCount%8==7){
-  wordX = random(width*.5, width);
-  strongerY = random(height*.2, height*.8);
+  wordX = random(0, width);
+  strongerY = random(0, height*.8);
 }
 
 }
